@@ -20,9 +20,15 @@ for file in os.listdir(directory):
             for a in data.results:
                 a: GameResult = a
                 a.enemy_id = data.enemy_id
-                results.append(a)
+                if getattr(a, 'game_started', 0) > '2020-05-12T10:00:00.030075':
+                    print(a.enemy_race, getattr(a, 'bot_version',"not_found"))
+                    a.bot_version = [getattr(a, 'bot_version',"v0.3.0")]
+                else:
+                    print(a.enemy_race, getattr(a, 'bot_version',["v0.2.2"])[0])
+                    a.bot_version = [getattr(a, 'bot_version',["v0.2.2"])[0]]
 
-                print(a.enemy_race, getattr(a, 'bot_version',["v0.2.2"])[0])
+                if getattr(a, 'game_started', 0) > '2020-05-01T21:56:45.030075':
+                    results.append(a)
 
         continue
     else:
@@ -109,6 +115,37 @@ for ver in versions:
 
 ax.set_ylabel('Win percent')
 ax.set_title('Win rate by race for versions')
+ax.set_xticks([0, 1, 2])
+ax.set_xticklabels(["Zerg", "Protoss", "Terran"])
+ax.legend()
+
+fig.tight_layout()
+
+
+
+###
+### Plot win rate for races over builds
+###
+fig, ax = plt.subplots()
+
+builds = sorted(set(map(lambda result: getattr(result, 'bot_build',""), results)))
+
+build_filter = lambda build, results_input: filter(lambda result: getattr(result, 'bot_build',"") == build, results_input)
+
+n = -0.5
+width = 0.7 * 1/len(builds)
+for build in builds:
+    rects1 = ax.bar(
+        [x + n * width for x in range(0, 3)],
+        [len(list(filter(lambda res: res.result == 1, build_filter(build, race_result)))) / len(list(build_filter(build, race_result))) if len(list(build_filter(build, race_result))) != 0 else 0 for race_result in results_for_races],
+        width=width,
+        label=build
+    )
+    n += 1
+    autolabel(rects1, [len(list(build_filter(build, race_result))) for race_result in results_for_races])
+
+ax.set_ylabel('Win percent')
+ax.set_title('Win rate by race for builds')
 ax.set_xticks([0, 1, 2])
 ax.set_xticklabels(["Zerg", "Protoss", "Terran"])
 ax.legend()
